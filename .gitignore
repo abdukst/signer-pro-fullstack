@@ -1,0 +1,27 @@
+# --- Backend (Python) ---
+# Ignore the virtual environment
+file_signer_backend/venv/
+# Ignore the environment variables file 
+file_signer_backend/.env
+
+# Ignore Python cache files
+**/__pycache__/
+*.pyc
+
+# Ignore the SQLite database and any temp files
+file_signer_backend/*.db
+file_signer_backend/*.bin
+
+# --- Frontend (Node/Vue) ---
+# Ignore the dependencies folder
+file_signer_frontend/node_modules/
+# Ignore build outputs
+file_signer_frontend/dist/
+# Ignore Vite temp files
+file_signer_frontend/.vite-temp/
+
+# --- IDE & Editor Settings ---
+.vscode/
+file_signer_frontend/.vscode/
+.DS_Store
+Thumbs.db
