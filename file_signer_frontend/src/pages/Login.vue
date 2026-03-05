@@ -1,6 +1,16 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-100 ">
-    <div class="w-full max-w-md p-6 bg-white rounded shadow-xl border border-gray-100">
+
+  <div class="min-h-screen bg-gray-50 pt-40 pb-12 px-4">
+    <nav class="border-b border-gray-200 w-full fixed top-0 left-0  z-50 ">
+      <div class="max-w-screen-2xl flex flex-wrap items-center justify-between mx-auto p-4 ">
+        <span class="text-2xl font-bold text-green-600">SignerPro</span>
+      <router-link to="/verification" class="bg-green-600 hover:bg-green-700 rounded text-white font-medium px-5 py-2 shadow-sm transition-all duration-150">
+        verification
+      </router-link>
+      </div>
+    </nav>
+    
+    <div class="w-full mx-auto max-w-md p-6   bg-white rounded shadow-xl border border-gray-100">
       <h2 class="text-xl font-bold mb-4 text-center text-gray-700">
         Login
       </h2>
@@ -17,7 +27,7 @@
           </label>
 
           <input type="email" v-model="email" required
-            class="mt-1 w-full border rounded px-3 py-2 outline-none transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            class="mt-1 w-full border rounded px-3 py-2 outline-none transition-all duration-200 focus:border-green-500 focus:ring-2 focus:ring-green-200"
             placeholder="amir@example" />
 
         </div>
@@ -26,7 +36,7 @@
             Password
           </label>
           <input type="password" v-model="password" required
-            class="mt-1 w-full border rounded px-3 py-2 outline-none transition-all duration-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+            class="mt-1 w-full border rounded px-3 py-2 outline-none transition-all duration-200 focus:border-green-500 focus:ring-2 focus:ring-green-200"
             placeholder="••••••••" />
         </div>
         <button type="submit" :disabled="loading"
@@ -44,8 +54,6 @@
     </div>
 
   </div>
-
-
 </template>
 
 <script setup>
