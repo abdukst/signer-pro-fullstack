@@ -61,25 +61,32 @@ def verify_file(db: Session,
                 file_id: int,
                 file_obj
                 ) -> bool:
+
   file_record = db.query(FileRecord).filter(
     FileRecord.id==file_id,
     FileRecord.user_id==user_id
     ).first()
-  # check if the original hash without signature matchs the incoming file hash with out signature.
+
   if not file_record:
     raise ValueError("File not found")
+ 
+  # claculate the incoming file hash
+  incoming_file_hash = hash_file(file_obj=file_obj)
   
-  incoming_hash = hash_file(file_obj=file_obj)
-  
-  if incoming_hash != file_record.file_hash:
-    raise ValueError("File was modified")
+  # 1. check if the original hash without signature matchs the incoming file hash with out signature.
+  # Integrity (Has the file changed?)
+  if incoming_file_hash != file_record.file_hash:
+    raise ValueError("Integrity check failed: The file has been modified since it was signed.")
   
   user = db.query(User).filter(User.id==user_id).first()
   if not user:
-    raise ValueError("User is not Found")
+    raise ValueError("Signer identity not found")
+  
+  # Check 2: Authenticity (Was it really this user?)
+  # This will now either return True or raise a ValueError
   return verify_signature(
     user.public_key,
-    incoming_hash.encode(),
+    incoming_file_hash.encode(),
     file_record.signature
   )
   

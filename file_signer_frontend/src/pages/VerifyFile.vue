@@ -21,15 +21,21 @@
       </div>
 
     </div>
-    <div class="max-w-xl mx-auto bg-white rounded-xl">
-      <div v-if="result !== null" class="border border-blue-200 mt-4 font-medium">
-        <p v-if="result.valid" class="text-green-600">File is valid (unchanged)</p>
-        <p v-else class="text-red-600"> File has been modified</p>
+    <!-------------- Result Card -------------------->
+    <div class="max-w-xl mx-auto">
+
+      <!-- Result True (Verification Success)-->
+      <div v-if="result" class="border border-green-200 bg-green-50 text-center  py-15 rounded-xl ">
+        <p class="text-green-600">File's signature is valid (unchanged File)</p>
+      </div>
+      <!--Result False (Verification failed)-->
+      <div v-else-if="errorMessage" class="bg-red-50 border border-red-200 py-15 rounded-xl text-center">
+        <p class="text-red-600">{{ errorMessage }}</p>
       </div>
       <div v-else class="text-center border border-dashed rounded-xl py-15 bg-white border-gray-300 shadow">
-        <p v-if="errorMessage" class="text-red-600">{{ errorMessage }}</p>
-        <p v-else class="text-gray-500 ">waiting result</p>
+        <p class="text-gray-500 ">waiting result</p>
       </div>
+
     </div>
   </div>
 
@@ -44,19 +50,20 @@ const fileId = route.params.id
 
 const selectedFile = ref(null)
 const result = ref(null)
-const errorMessage = ref("")
+const errorMessage = ref(null)
 
 function onFileChange(e) {
   selectedFile.value = e.target.files[0]
 }
 
 async function verify() {
-  errorMessage.value = ""
+  errorMessage.value = null
+  result.value = null
   try {
     result.value = await verifyFile(fileId, selectedFile.value)
   } catch (error) {
     errorMessage.value = error
     console.log(errorMessage.value)
-  } 
+  }
 }
 </script>

@@ -80,7 +80,7 @@
       </div>
       <!-------------- Result Card -------------------->
       <div>
-        <div v-if="result !== null" >
+        <div v-if="result !== null || error" >
           <!-- Result True (Verification Success)-->
            <div v-if="result" class="border border-green-200 bg-green-50 text-center p-6 rounded-xl ">
             <span class="text-4xl text-green-600 block mb-2">✓</span>
@@ -96,7 +96,7 @@
               Verification Failed
             </h3>
             <p class="text-red-700">
-              The file has been modified, or the key/signature is incorrect.
+              {{error}}
             </p>
            </div>
 
@@ -136,7 +136,8 @@ async function verifyIndependent() {
       )
     
   } catch (e) {
-    error.value = e.message
+    error.value = e
+    console.log(error)
   } finally {
     loading.value = false
   }

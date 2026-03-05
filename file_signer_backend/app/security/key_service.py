@@ -5,6 +5,7 @@ from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.serialization import load_pem_private_key, load_pem_public_key
+from cryptography.exceptions import InvalidSignature
 
 
 from typing import TYPE_CHECKING
@@ -159,8 +160,14 @@ def verify_signature(public_key_str: str, data: bytes, signature: bytes) -> bool
     Verify that the signature was produced by the owner
     of the corresponding private key.
     """
-    public_key = load_public_key(public_key_str)
     
+    # 1. Step: Try to load the key
+    try:
+      public_key = load_public_key(public_key_str)
+    except Exception as e:
+       # If the key is malformed, we stop here with a clear message
+       raise ValueError("Identity Verification Error: The public key is invalid or corrupted.")
+    # 2. Step: Perform the actual cryptographic verification
     try:
       public_key.verify(
         signature=signature,
@@ -172,8 +179,10 @@ def verify_signature(public_key_str: str, data: bytes, signature: bytes) -> bool
         algorithm=hashes.SHA256()
       )
       return True
+    except InvalidSignature:
+       raise ValueError("The signature does not match the provided file content.")
     except Exception:
-      return False
+      raise ValueError("Technical error during signature verification")
     
 def format_signature_to_b64(signature_bytes: bytes):
   """
