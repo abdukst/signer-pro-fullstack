@@ -2,23 +2,41 @@ import apiClient from "./client"
 
 
 //Axios automatically sets the correct headers when you pass FormData
-export async function signFile(file, password){
-  try{
+export async function signFile(file, password) {
+  try {
     const formData = new FormData()
     // 'uploaded_file' must match the variable name in your FastAPI route!
     formData.append('uploaded_file', file)
     formData.append('password', password)
     const response = await apiClient.post(
       '/files/sign',
-       formData, 
-       {
+      formData,
+      {
         responseType: 'blob'
-       }
-       
+      }
+
     )
     return response
   } catch (error) {
-    throw new Error(error.response?.data?.detail||'File signing failed')
+    // 1. Check if the error is a Blob (FastAPI error sent as binary)
+    if (error.response?.data instanceof Blob) {
+  
+      let errorJson
+      try {
+        // 2. AWAIT the text conversion of the blob(text() is async)
+         const errorText = await error.response.data.text();
+         // Try to parse as JSON to get the 'detail' field
+         errorJson = JSON.parse(errorText);
+      } catch (parseError) {
+         // If the server sent HTML or plain text instead of JSON
+        throw new Error('Technical error during signing');
+      }
+      // this actual detail from the backend!
+      throw new Error(errorJson.detail || 'Signing failed');
+    }
+
+    // Handle Network errors or standard JSON errors
+    throw new Error(error.response?.data?.detail || 'Server Connection Failed')
   }
 }
 
@@ -29,7 +47,7 @@ export async function verifyFile(fileId, file) {
     const response = await apiClient.post(`/files/verify/${fileId}`, formData)
     return response.data
   } catch (error) {
-    throw new Error(error.response?.data?.detail|| "'File verification failed")
+    throw new Error(error.response?.data?.detail || "'File verification failed")
   }
 }
 
@@ -38,7 +56,7 @@ export async function listFiles() {
     const response = await apiClient.get('/files/')
     return response.data
   } catch (error) {
-    throw new Error(error.response?.data?.detail||'Failed to load files')
+    throw new Error(error.response?.data?.detail || 'Failed to load files')
   }
 }
 

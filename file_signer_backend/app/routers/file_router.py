@@ -43,7 +43,11 @@ def sign_uploaded_file(
       }
     )
   except ValueError as e:
+     # This catches Invalid Password or larg file errors
     raise HTTPException(status_code=400, detail=str(e))
+  except Exception:
+    # This catches "Database Down" or "Disk Full"
+    raise HTTPException(status_code=500, detail="A technical error occurred. Please try again later.")
 
 @router.post("/verify/{file_id}")
 def verify_uploaded_file(

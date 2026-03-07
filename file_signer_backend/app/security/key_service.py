@@ -127,15 +127,25 @@ def unlock_private_key(user: "User", password: str):
     """
     Decrypt and reconstruct the user's private key.
     This is used only during signing operations.
-    """
-    decrypt_bytes = decrypt_private_key(
-      ciphertext=user.encrypted_private_key,
-      password=password,
-      salt = user.key_salt,
-      iv = user.key_iv
-    )
     
-    return load_private_key(decrypt_bytes)
+    
+    """
+    # Step 1: Always "succeeds" but might return garbage
+    ## Consider upgrading to use Use AES-GCM to separately if the password is correct(separating "Wrong Password" from "Technical Error") 
+    decrypt_bytes = decrypt_private_key(
+        ciphertext=user.encrypted_private_key,
+        password=password,
+        salt = user.key_salt,
+        iv = user.key_iv
+      )
+    try:
+      # Step 2: This is where we actually find out if the password was right because of using AES-CFB, which not like AES-GCM mode that includes a "Tag" (an authentication code)
+      return load_private_key(decrypt_bytes)
+    except Exception:
+       # If Error, it's almost certainly the password
+       raise ValueError("Please check your signature password.")
+    
+    
 
 def sign_data(user: "User", password: str , data: bytes) -> bytes:
     

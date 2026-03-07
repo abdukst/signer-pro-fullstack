@@ -18,22 +18,32 @@ def sign_file(db: Session,
               filename:str,
               file_obj
               ):
-  # Validate upload
+  # 1. Validate upload file (raises ValueError if too big/
   validate_file(filename=filename, file_obj=file_obj)
   # hash file to sign it.
   file_hash = hash_file(file_obj=file_obj)
   
-  #check if user has key
+  # 2. Setup (If user is signing first time)
   if not user_has_keys(user=user):
     initialize_user_keys(user=user, password= password)
     db.commit()  # save key to db
   
+  # 3. Metadata Generation to save in the db
   key_fingerprint = compute_key_fingerprint(user.public_key)
   signer_identifier = user.email
   
-
-  signature = sign_data(user=user, password=password,data=file_hash.encode())
+  # 3. The Core Action 
+  # If unlock_private_key fails, it raises the ValueError that thrown in unlock_private_key and raise it to the router.
+  try:
+    signature = sign_data(user=user, password=password,data=file_hash.encode())
+  except ValueError as e:
+    # This catches "Invalid Password" error from unlock_private_key
+    raise e
+  except Exception:
+    # This catches any other unexpected technical crash
+    raise ValueError("Technical error in the signing service")
   
+  # 5. DB PERSISTENCE (If no error raised)
   file_record = FileRecord(
     user_id= user.id,
     filename= filename,

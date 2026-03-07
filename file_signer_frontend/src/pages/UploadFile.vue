@@ -46,15 +46,11 @@ px-4">
               :disabled="loading">
               <span v-if="loading">loading</span>
               <span v-else>Upload & Sign </span>
-              <div v-if="error" class="mt-4 text-red-600">
-                {{ error }}
-              </div>
             </button>
           </div>
-
         </form>
       </div>
-      
+
       <!-- Success Message & Download Button -->
       <div v-if="result" class="mt-8 p-8 bg-green-50 border border-green-100 rounded-xl text-center shadow-sm">
         <div class="inline-flex items-center justify-center w-12 h-12 bg-green-100 text-green-600 rounded-full mb-4">
@@ -75,9 +71,12 @@ px-4">
           Download .sig File
         </a>
       </div>
-
+      <!--  Error  -->
+      <div v-else-if="error" class="bg-red-50 border border-red-200 py-15 rounded-xl text-center">
+        <p class="text-red-600">{{ error }}</p>
+      </div>
       <!-- "Empty State" shown only when no result exists -->
-      <div v-else class="text-center py-14 bg-white rounded-xl border border-dashed border-gray-300">
+      <div v-else class="text-center py-15 bg-white rounded-xl border border-dashed border-gray-300">
         <p class="text-gray-500">No file signed yet.</p>
       </div>
 
@@ -130,7 +129,7 @@ async function upload() {
     downloadUrl.value = createDownloadUrl(response, downloadUrl.value)
     result.value = { success: true }
   } catch (e) {
-    error.value = e.message
+    error.value = e
   } finally {
     loading.value = false
   }
