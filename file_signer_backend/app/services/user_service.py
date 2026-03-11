@@ -1,6 +1,9 @@
 from app.schemas.user_schema import  UserCreate
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm.exc import MultipleResultsFound
 from app.models.user_model import User
+from app.models.user_keys_model import UserKey
 from app.security.password import hash_password
 from app.security.jwt import create_access_token
 from passlib.context import CryptContext
@@ -56,8 +59,27 @@ def autenticate_user(db: Session, email: str, password: str) -> str:
         return None
     return create_access_token(subject=str(user.id))
 
-def get_user_public_key(user: User):
-    if not user.public_key:
+def get_user_public_key(db: Session,user_id: int):
+    user_aktive_key = get_user_active_key(db=db, user_id=user_id)
+    if not user_aktive_key:
         raise ValueError("User has no public key yet: Sign a file first")
-    return user.public_key
+    return user_aktive_key.public_key
       
+def get_user_active_key(db:Session, user_id: int) -> UserKey | None:
+    try:
+        return db.query(UserKey).filter(
+            UserKey.user_id == user_id,
+            UserKey.is_active == True
+            # one_or_none() is an "Integrity Check. It tells SQLAlchemy: "I expect 0 or 1. If you find 2, scream loudly (raise an error)." This is much safer for a cryptographic system.
+        ).one_or_none()
+    except MultipleResultsFound:
+        # This triggers if the Unique Index failed or wasn't applied correctly
+        # and somehow two keys are marked 'is_active=True'.
+        raise ValueError("Critical Security Error: Multiple active keys found for this account. Please contact support.")
+    except SQLAlchemyError:
+        # This catches "Database Locked", "Connection Lost", etc.
+        # We log the real error 'e' internally, but show the user a clean message.
+        raise ValueError("A database error occurred while retrieving your security keys.")
+    except Exception:
+        # any other error
+        raise ValueError("Could not load your key. Pleas try again")

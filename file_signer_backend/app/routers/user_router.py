@@ -26,10 +26,14 @@ def read_current_user(
 
 @router.get("/public-key")
 def get_public_key(
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
                    ):
     try:
-        return get_user_public_key(current_user)
+        return get_user_public_key(
+            db=db,
+            user_id = current_user.id
+            )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

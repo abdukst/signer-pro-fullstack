@@ -7,18 +7,8 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.serialization import load_pem_private_key, load_pem_public_key
 from cryptography.exceptions import InvalidSignature
 
-
-from typing import TYPE_CHECKING
-
-"""
-to avoid : user_model → key_service → user_model  (circular import)
-allows us to import a type only for static typing, not at runtime.
-key_service should not depend on the ORM layer.
-# So the Dependency Direction Remains Clean:          models─►services─►security
-
-"""
-if TYPE_CHECKING:
-  from app.models.user_model import User
+from app.models.user_keys_model import UserKey
+import hashlib
 
 def generate_key_pair():
   """
@@ -84,16 +74,16 @@ def decrypt_private_key(ciphertext: bytes, password: str, salt: bytes, iv: bytes
   
   return decryptor.update(ciphertext) + decryptor.finalize()
   
-  
+
 """
 Notice the quotes "User" — this is called a forward reference.
 Python will not try to resolve User at runtime, but type checkers (and your IDE) will understand it
-"""
+
 def initialize_user_keys(user: "User", password: str):
-    """
+    
     Generate and store encrypted key material for a user.
     Called only once (lazy initialization).
-    """
+    
     private_key, public_key = generate_key_pair()
     private_bytes = serialize_private_key(private_key=private_key)
     public_bytes = serialize_public_key(public_key=public_key)
@@ -104,12 +94,52 @@ def initialize_user_keys(user: "User", password: str):
     user.encrypted_private_key = ciphertext
     user.key_salt = salt
     user.key_iv = iv
+"""
+def initialize_user_keys(user_id: int, password: str):
+    try:
+      # 1. Generate keys objects.
+      private_key, public_key = generate_key_pair()
+
+      # 2. Convert to PEM (Bytes)
+      private_bytes = serialize_private_key(private_key=private_key)
+      public_bytes = serialize_public_key(public_key=public_key)
+      
+      # 3. Encrypt the private key
+      ciphertext, salt, iv = encrypt_private_key(private_bytes, password)
+
+      # 4. Prepare data for the model
+      # Convert PEM bytes to a string for DB storage
+      public_key_str = public_bytes.decode()
+
+      # Pass bytes to fingerprint function
+      key_fingerprint = compute_key_fingerprint(public_bytes)
+
+      return UserKey(
+        user_id = user_id,
+        key_fingerprint = key_fingerprint,
+        public_key = public_key_str,
+        encrypted_private_key = ciphertext,
+        key_salt = salt,
+        key_iv = iv,
+        is_active = True,
+      )
+    except Exception as e:
+       # Prevents the app from proceeding with broken crypto
+       raise ValueError(f"Failed to initialize secure keys: {str(e)}")
+
+
+
+def compute_key_fingerprint(public_key_pem: bytes) -> str:
+  """
+  Creates a stable SHA256 fingerprint from the PEM bytes of the public key.
+  this idenifies which key signed the document.
+  """
+  digest = hashlib.sha256(public_key_pem).hexdigest()
+
+  # format like real certificte fingerprints
+  # format like: AA:BB:CC...
+  return ":".join(digest[i:i+2] for i in range(0, len(digest), 2)).upper()
     
-"""Detect If User Already Has Keys"""
-
-def user_has_keys(user:"User") -> bool:
-  return user.encrypted_private_key is not None
-
 def load_private_key(private_key_bytes: bytes):
   """
   Rebuild RSA private key object from PEM bytes.
@@ -123,21 +153,21 @@ def load_public_key(public_key_str: str):
   return load_pem_public_key(public_key_str.encode())
   
     
-def unlock_private_key(user: "User", password: str):
+def unlock_private_key(user_key: UserKey, password: str):
     """
     Decrypt and reconstruct the user's private key.
     This is used only during signing operations.
-    
-    
     """
     # Step 1: Always "succeeds" but might return garbage
     ## Consider upgrading to use Use AES-GCM to separately if the password is correct(separating "Wrong Password" from "Technical Error") 
+    
     decrypt_bytes = decrypt_private_key(
-        ciphertext=user.encrypted_private_key,
+        ciphertext=user_key.encrypted_private_key,
         password=password,
-        salt = user.key_salt,
-        iv = user.key_iv
+        salt = user_key.key_salt,
+        iv = user_key.key_iv
       )
+    print("----")
     try:
       # Step 2: This is where we actually find out if the password was right because of using AES-CFB, which not like AES-GCM mode that includes a "Tag" (an authentication code)
       return load_private_key(decrypt_bytes)
@@ -147,14 +177,13 @@ def unlock_private_key(user: "User", password: str):
     
     
 
-def sign_data(user: "User", password: str , data: bytes) -> bytes:
+def sign_data(user_key: UserKey, password: str , data: bytes) -> bytes:
     
    """
    Create a digital signature over data.
    We sign the HASH of the file, not the raw file.
    """
-   private_key = unlock_private_key(user=user, password=password)
-   
+   private_key = unlock_private_key(user_key=user_key, password=password)
    signature = private_key.sign(
      data=data,
      padding=padding.PSS(
