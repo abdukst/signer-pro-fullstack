@@ -14,3 +14,8 @@ class UserResponse(BaseModel):
 
   model_config =ConfigDict(from_attributes=True)
 
+class RotationRequest(BaseModel):
+  """
+  Schema for confirming key rotation with the user's password.
+  """
+  password: str

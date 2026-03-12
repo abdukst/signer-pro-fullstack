@@ -83,3 +83,26 @@ def get_user_active_key(db:Session, user_id: int) -> UserKey | None:
     except Exception:
         # any other error
         raise ValueError("Could not load your key. Pleas try again")
+
+def rotate_user_key(db: Session, user: User, password: str):
+    """
+    Verifies the password and deactivates the current active key.
+    """
+    #We ask the user to provide their password again in the request to "confirm" the rotation, ensuring a hacker with a stolen browser session can't randomly rotate their keys
+    
+    if not pwd_context.verify(password, user.passwordhash):
+        raise ValueError("Invalid password. Rotation denied.")
+    
+    # get the user active key that should be deactivated
+    active_user_key = get_user_active_key(db=db, user_id=user.id)
+    if not active_user_key:
+        raise ValueError("No active key found to rotate.")
+    try:
+        # Deactivate the key and save the changes
+        active_user_key.is_active = False
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e
+
+
