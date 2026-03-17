@@ -6,6 +6,7 @@ import { useAuth } from '../auth/authStore'
 import Uploadfile from '../pages/Uploadfile.vue'
 import VerifyFile from '../pages/VerifyFile.vue'
 import IndependentVerification from '../pages/IndependentVerification.vue'
+import Profile from '../pages/Profile.vue'
 
 const routes = [
   {
@@ -38,6 +39,11 @@ const routes = [
   {
     path:'/verification',
     component: IndependentVerification
+  },
+  {
+    path: '/profile',
+    component: Profile,
+    meta: {requiresAuth:true}
   }
 ]
 const router = createRouter({

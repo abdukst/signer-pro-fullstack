@@ -12,6 +12,10 @@
               {{ username || 'User' }}
             </span>
           </span>
+          <router-link to="/profile"
+          class="bg-green-50 hover:bg-green-100 rounded text-gray-600 border border-green-200  font-bold px-4 py-2 text-sm  transition-all duration-150">
+          Profile
+          </router-link>
           <button @click="logout"
             class="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border border-red-100 hover:border-red-200 px-4 py-2 rounded text-sm font-medium transition duration-200">
             Logout
@@ -20,8 +24,7 @@
       </div>
     </nav>
     <!-- Content Area -->
-    <div class="max-w-3xl mx-auto 
-  ">
+    <div class="max-w-3xl mx-auto">
       <!-- New Header Section -->
       <div class="flex justify-between items-center  mb-8">
         <h1 class="text-2xl font-medium text-gray-800">
