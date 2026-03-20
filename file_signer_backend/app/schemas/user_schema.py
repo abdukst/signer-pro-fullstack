@@ -11,8 +11,11 @@ class UserResponse(BaseModel):
   email: EmailStr
   username: str
   fullname: str | None = None
+  active_key_fingerprint: str | None = None
+  active_public_key: str | None = None
+  key_status: bool | None = None
 
-  model_config =ConfigDict(from_attributes=True)
+  model_config = ConfigDict(from_attributes=True)
 
 class RotationRequest(BaseModel):
   """

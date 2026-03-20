@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.schemas.user_schema import UserCreate, UserResponse, RotationRequest
-from app.services.user_service import register_user, get_user_public_key, rotate_user_key
+from app.services.user_service import register_user, get_user_public_key, rotate_user_key, get_user_profile
 from app.dependencies.db import get_db
 from app.dependencies.auth import get_current_user
 from app.models.user_model import User
@@ -20,9 +20,16 @@ def register_user_endpoint(
 
 @router.get("/me", response_model=UserResponse)
 def read_current_user(
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return current_user
+    try:
+        return get_user_profile(db=db, user=current_user)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=500, detail="Could not load profile details")
+
 
 @router.get("/public-key")
 def get_public_key(

@@ -37,3 +37,12 @@ export async function rotateUserKeys(password) {
     throw new Error(error.response?.data?.detail || 'Rotatoion failed')
   }
 }
+
+export async function getUserData() {
+  try {
+    const response = await apiClient.get('/users/me')
+    return response.data
+  } catch (error) {
+    throw new Error(error.response?.data?.detail||'User data can not be fetched')
+  }
+}

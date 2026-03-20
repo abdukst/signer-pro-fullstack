@@ -105,4 +105,12 @@ def rotate_user_key(db: Session, user: User, password: str):
         db.rollback()
         raise e
 
-
+def get_user_profile(db: Session, user: User):
+    active_key = get_user_active_key(db = db, user_id = user.id)
+    # Attach these temporary attributes to the user object.
+    # Pydantic will pick these up because they match the names in UserResponse.
+    if active_key:
+        user.active_key_fingerprint = active_key.key_fingerprint
+        user.active_public_key = active_key.public_key
+        user.key_status = active_key.is_active
+    return user
