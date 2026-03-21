@@ -140,7 +140,7 @@
                   class="w-full flex justify-between items-center flex-col sm:flex-row gap-3 bg-amber-300 px-3  p-3 rounded-lg border border-gray-200 shadow-inner">
 
                   <!-- Button 1: Download -->
-                  <button @click="toggleModal"
+                  <button @click="downloadKey"
                     class="w-full sm:w-1/3 flex items-center justify-center whitespace-nowrap overflow-hidden gap-1 text-green-600 hover:text-green-700 font-medium text-sm border border-green-600 px-2 py-2.5 rounded-md hover:bg-green-50 transition-all duration-300">
                     <svg class="w-4 h-4 shrink-0 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -254,6 +254,7 @@
 import { onMounted, ref } from 'vue';
 import { getUserData, rotateUserKeys } from '../api/auth';
 import BaseModel from './BaseModel.vue';
+import { triggerDownload } from '../utils/download';
 
 //inpute from the modal
 const password = ref('')
@@ -314,5 +315,14 @@ const refreshPage = () => {
   window.location.reload();
 };
 
+function downloadKey() {
+  if (!userData.value?.active_public_key) return
+
+  triggerDownload(
+    userData.value.active_public_key,
+    `public_key_${userData.value.username}.pem`,
+    'application/x-pem-file'
+  )
+}
 
 </script>

@@ -62,14 +62,14 @@ px-4">
         <h3 class="text-xl font-semibold text-green-900 mb-2">File Signed Successfully!</h3>
         <p class="text-green-700 mb-6">Your signature file is ready for download.</p>
 
-        <a :href="downloadUrl" :download="signatureFileName"
+        <button @click="downloadSignature"
           class="inline-flex items-center justify-center bg-green-600 text-white font-medium px-8 py-3 rounded-lg hover:bg-green-700 transition-all duration-200 shadow-md hover:shadow-lg">
           <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
           </svg>
           Download .sig File
-        </a>
+        </button>
       </div>
       <!--  Error  -->
       <div v-else-if="error" class="bg-red-50 border border-red-200 py-15 rounded-xl text-center">
@@ -86,12 +86,11 @@ px-4">
 <script setup>
 import { ref } from 'vue';
 import { signFile } from '../api/files';
+import { triggerDownload } from '../utils/download';
 const selectedFile = ref(null)
 const password = ref("")
 const result = ref(null)
 const signatureFileName = ref('')
-const downloadUrl = ref(null)
-
 const loading = ref(false)
 const error = ref(null)
 
@@ -111,29 +110,29 @@ function getSigFilenameFromResponse(response, fallbackName) {
   return `${fallbackName}.sig`
 }
 
-function createDownloadUrl(response, oldUrl) {
-  const blob = response.data
-  if (oldUrl) {
-    console.log("ok...")
-    window.URL.revokeObjectURL(oldUrl)
-  }
-  return window.URL.createObjectURL(blob)
-}
 async function upload() {
   loading.value = true
   error.value = null
   result.value = null
   try {
     const response = await signFile(selectedFile.value, password.value)
+    console.log(response)
+    result.value = response.data
     signatureFileName.value = getSigFilenameFromResponse(response, selectedFile.value.name)
-    downloadUrl.value = createDownloadUrl(response, downloadUrl.value)
-    result.value = { success: true }
   } catch (e) {
     error.value = e
   } finally {
     loading.value = false
   }
 
+}
+
+function downloadSignature(){
+  triggerDownload(
+    result.value,
+    signatureFileName.value,
+   'text/plain'
+  )
 }
 
 </script>

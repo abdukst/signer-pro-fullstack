@@ -93,17 +93,18 @@
 
             <div>
               <label class="text-xs font-bold text-gray-400 uppercase"> Signature </label>
-              <a :href="sigDownloadUrl" :download="`${fileSignatureData.filename}.sig`"
-                class="
+
+              <button @click="downloadSignature"
+                class=" w-full mt-2
                 flex border
-                items-center mx-5
+                items-center 
                 justify-center bg-white text-green-700 font-medium px-8 py-1 rounded-lg hover:bg-green-50 transition-all duration-200 shadow-md hover:shadow-lg">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
                 </svg>
-                Download File
-              </a>
+                Download .sig File
+              </button>
             </div>
 
             <div>
@@ -140,13 +141,13 @@ import { ref, onMounted } from 'vue';
 import { listFiles, getSignatureInspection } from '../api/files';
 import { useAuth } from '../auth/authStore';
 import router from '../router';
+import { triggerDownload } from '../utils/download';
 const files = ref([])
 const { clearToken, username } = useAuth()
 // Modal State
 const fileSignatureData = ref(null)
 const isModalOpen = ref(false)
 const isLoadingInfo = ref(false)
-const sigDownloadUrl = ref(null)
 
 onMounted(async () => {
   try {
@@ -156,6 +157,7 @@ onMounted(async () => {
   }
 
 })
+
 function logout() {
   clearToken()
   router.push("/login")
@@ -166,10 +168,6 @@ async function getFileSignatureInfo(fileId) {
   isModalOpen.value = true
   try {
     fileSignatureData.value = await getSignatureInspection(fileId)
-    sigDownloadUrl.value = createDownloadUrl(
-      fileSignatureData.value.signature,
-      sigDownloadUrl.value
-    )
   }
   catch (error) {
     console.log(error)
@@ -179,18 +177,15 @@ async function getFileSignatureInfo(fileId) {
   }
 }
 function closeModal() {
-  sigDownloadUrl.value = null
   fileSignatureData.value = null
   isModalOpen.value = false
 }
 
-function createDownloadUrl(signature, oldUrl) {
-  //Create a "Blob" (Binary Large Object) from the string.
-  //We treat the Base64 string as plain text for the file content.
-  const blob = new Blob([signature], { type: 'text/plain' })
-  if (oldUrl) {
-    window.URL.revokeObjectURL(oldUrl)
-  }
-  return window.URL.createObjectURL(blob)
+function downloadSignature(){
+  triggerDownload(
+    fileSignatureData.value.signature,
+   `${fileSignatureData.value.filename}.sig`,
+   'text/plain'
+  )
 }
 </script>
