@@ -13,8 +13,8 @@
             </span>
           </span>
           <router-link to="/profile"
-          class="bg-green-50 hover:bg-green-100 rounded text-gray-600 border border-green-200  font-bold px-4 py-2 text-sm  transition-all duration-150">
-          Profile
+            class="bg-green-50 hover:bg-green-100 rounded text-gray-600 border border-green-200  font-bold px-4 py-2 text-sm  transition-all duration-150">
+            Profile
           </router-link>
           <button @click="logout"
             class="bg-red-50 hover:bg-red-100 text-red-600 hover:text-red-700 border border-red-100 hover:border-red-200 px-4 py-2 rounded text-sm font-medium transition duration-200">
@@ -36,64 +36,131 @@
         </router-link>
       </div>
 
+      <div v-if="isLoadingFiles" class="flex justify-center py-3">
+        <div class="animate-spin rounded-full h-10 w-8 border-b-3 border-t-3 border-green-600">
+        </div>
+      </div>
+
+      <div v-else-if="errorMessage"
+        class="w-1/3 mx-auto text-center border py-5 bg-white rounded-xl shadow-sm  border-gray-100">
+        <div class="text-red-500 mb-2">⚠️</div>
+        <p class="text-sm text-red-600 font-medium">{{ errorMessage }}</p>
+        <button @click="refreshPage" class="text-sm text-gray-500 underline hover:text-gray-800">
+          Try again
+        </button>
+      </div>
+
       <!-- File List -->
-      <div v-if="files.length === 0"
-        class="text-center py-12 bg-white   rounded-xl border border-dashed border-gray-300">
-        <p class="text-gray-500"> No files signed yet. </p>
-      </div>
+      <div v-else>
+        <div v-if="files.length === 0"
+          class="text-center py-12 bg-white   rounded-xl border border-dashed border-gray-300">
+          <p class="text-gray-500"> No files signed yet. </p>
+        </div>
 
-      <div v-else class="space-y-4">
-        <div v-for="file in files" :key="file.id"
-          class="p-5 bg-white rounded-xl shadow-sm border border-gray-100 flex justify-between items-center hover:shadow-md transition">
-          <div>
-            <p class="font-semibold text-gray-900">{{ file.filename }}</p>
-            <p class="text-xm text-gray-400 mt-1">Signed on: {{ (file.created_at) }}</p>
+        <div v-else class="space-y-4">
+          <div v-for="file in files" :key="file.id"
+            class="p-5 bg-white rounded-xl shadow-sm border border-gray-100 flex justify-between items-center hover:shadow-md transition">
+            <div>
+              <p class="font-semibold text-gray-900">{{ file.filename }}</p>
+              <p class="text-xm text-gray-400 mt-1">Signed on: {{ (file.created_at) }}</p>
+            </div>
+            <router-link :to="`/verify/${file.id}`"
+              class="text-green-600 hover:text-green-700 font-medium text-sm border border-green-600 px-3 py-1 rounded-md hover:bg-green-50 transition duration-200">
+              Verify
+            </router-link>
+
+            <button @click="getFileSignatureInfo(file.id)"
+              class="text-green-600 hover:text-green-700 font-medium text-sm border border-green-600 px-3 py-1 rounded-md hover:bg-green-50 transition duration-200">
+              Inspect
+            </button>
+
           </div>
-          <router-link :to="`/verify/${file.id}`"
-            class="text-green-600 hover:text-green-700 font-medium text-sm border border-green-600 px-3 py-1 rounded-md hover:bg-green-50 transition duration-200">
-            Verify
-          </router-link>
-
-          <button @click="getFileSignatureInfo(file.id)"
-            class="text-green-600 hover:text-green-700 font-medium text-sm border border-green-600 px-3 py-1 rounded-md hover:bg-green-50 transition duration-200">
-            Inspect
-          </button>
-
         </div>
       </div>
+
     </div>
-    <!-- Modal Overlay -->
-    <div v-if="isModalOpen"
-      class="fixed  inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <!---Modal Content-->
-      <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden border border-gray-200">
-        <!--Header-->
-        <div class="px-6 py-3 border-b border-gray-200 flex justify-between items-center bg-gray-100">
-          <h3 class="font-bold text-gray-700">signature Audit Details</h3>
-          <button @click="closeModal" class="text-red-500 hover:text-red-600 font-extrabold text-2xl">&times;</button>
-        </div>
-        <!--Body-->
-        <div class="p-5">
-          <div v-if="isLoadingInfo" class="flex justify-center py-3">
-            <div class="animate-spin rounded-full h-10 w-8 border-b-3 border-t-3 border-green-600"></div>
-          </div>
 
-          <div v-else-if="fileSignatureData" class="space-y-4">
+
+    <!-- Modal Overlay -->
+    <base-model :open-modal="isModalOpen" @closeModal="toggleModal">
+
+      <!-- Use mode="out-in" for a seamless swap -->
+      <Transition mode="out-in" enter-active-class="transition duration-100 ease-out"
+        enter-from-class="opacity-0 translate-y-2 translate-x-0" enter-to-class="opacity-100 translate-y-0"
+        leave-active-class="transition duration-50 ease-in" leave-from-class="opacity-100" leave-to-class="opacity-0">
+        
+        <!------------------ Waiting animation --------------->
+        <div v-if="isLoadingInfo" class="flex justify-center py-3">
+          <div class="animate-spin rounded-full h-10 w-8 border-b-3 border-t-3 border-green-600">
+          </div>
+        </div>
+
+        <div v-else-if="fileSignatureData" class="space-y-4">
+          <!------------------Title--------------------->
+          <div class="px-6  border-gray-100 flex justify-between items-center bg-gray-50">
+            <h3 class="font-bold text-gray-700">signature Audit Details</h3>
+          </div>
+          <!---------------- file name ------------------>
+          <div class="grid grid-cols-2 gap-4 ">
             <div>
               <label class="text-xs font-bold text-gray-400 uppercase"> Document Name</label>
-              <p class="text-gray-900 font-medium">{{ fileSignatureData.filename }} </p>
+              <p class="text-gray-900 font-medium px-2 py-1 bg-gray-100">{{ fileSignatureData.filename }} </p>
             </div>
-
             <div>
-              <label class="text-xs font-bold text-gray-400 uppercase"> Signer Identity</label>
-              <p class="text-gray-600 font-mono bg-gray-100 px-2 py-1  text-sm break-all">{{
-                fileSignatureData.signer_identifier }}
+              <label class="text-xs font-bold text-gray-400 uppercase">Record ID</label>
+              <p class="text-gray-700 px-2 py-1.5 bg-gray-100 text-sm">{{ fileSignatureData.id }} </p>
+            </div>
+          </div>
+
+          <!---------------- signer email ------------------>
+          <div>
+            <label class="text-xs font-bold text-gray-400 uppercase"> Signer Identity</label>
+            <p class="text-gray-600 font-mono bg-gray-100 px-2 py-1  text-sm break-all">{{
+              fileSignatureData.signer_identifier }}
+            </p>
+          </div>
+
+          <!---------------- Key fingerprint  ------------------>
+          <div>
+            <label class="text-xs font-bold text-gray-400 uppercase">Key Fingerprint (SHA-256)</label>
+            <p class="text-gray-600 font-mono text-xs bg-gray-100 p-2 rounded break-all mt-1">
+              {{ fileSignatureData.key_fingerprint }}</p>
+          </div>
+          <!---------------- fileId signature date  ------------------>
+          <div class="grid grid-cols-2 gap-4 pt-2 ">
+            <div>
+              <label class="text-xs font-bold text-gray-400 uppercase">Key status</label>
+              <p class="text-gray-700 py-1 px-2 bg-gray-100 text-sm">
+                {{ fileSignatureData?.key_status ? 'active' : 'Revoked on: ' + new
+                  Date(fileSignatureData.revoked_at).toLocaleString() }}
               </p>
             </div>
-
             <div>
+              <label class="text-xs font-bold text-gray-400 uppercase">Signature Timestamp</label>
+              <p class="text-gray-700 py-1 px-2 bg-gray-100 text-sm">{{ 'Signed on: ' + new
+                Date(fileSignatureData.created_at).toLocaleString() }} </p>
+            </div>
+          </div>
+          <!---------------- Buttons section ------------------>
+          <div class="grid grid-cols-2">
+            <!---------------- Download key Button ------------------>
+            <div class="mx-2">
+              <label class="text-xs font-bold text-gray-400 uppercase"> Public key </label>
+              <button @click="downloadKey"
+                class=" w-full mt-2
+                flex border
+                items-center 
+                justify-center bg-white text-green-700 font-medium px-8 py-1 rounded-lg hover:bg-green-50 transition-all duration-200 shadow-md hover:shadow-lg">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                Download key
+              </button>
+            </div>
+            <!-------------- Download Signature Button ------------------>
+            <div class="mx-2">
               <label class="text-xs font-bold text-gray-400 uppercase"> Signature </label>
-
               <button @click="downloadSignature"
                 class=" w-full mt-2
                 flex border
@@ -106,34 +173,10 @@
                 Download .sig File
               </button>
             </div>
-
-            <div>
-              <label class="text-xs font-bold text-gray-400 uppercase">Key Fingerprint (SHA-256)</label>
-              <p class="text-gray-600 font-mono text-xs bg-gray-100 p-2 rounded break-all mt-1">
-                {{ fileSignatureData.key_fingerprint }}</p>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4 pt-2 ">
-              <div>
-                <label class="text-xs font-bold text-gray-400 uppercase">Record ID</label>
-                <p class="text-gray-700 py-1 px-2 bg-gray-100 text-sm">{{ fileSignatureData.id }} </p>
-              </div>
-              <div>
-                <label class="text-xs font-bold text-gray-400 uppercase">Timestamp</label>
-                <p class="text-gray-700 py-1 px-2 bg-gray-100 text-sm">{{ new Date(fileSignatureData.created_at).toLocaleString() }} </p>
-              </div>
-            </div>
           </div>
         </div>
-        <!---Footer-->
-        <div class="px-6 py-3 text-right border border-gray-200 bg-gray-100">
-          <button @click="closeModal"
-            class="bg-white text-red-600 border border-red-200 px-4 py-1 rounded text-sm font-medium hover:bg-red-100">
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
+      </Transition>
+    </base-model>
   </div>
 </template>
 <script setup>
@@ -142,18 +185,33 @@ import { listFiles, getSignatureInspection } from '../api/files';
 import { useAuth } from '../auth/authStore';
 import router from '../router';
 import { triggerDownload } from '../utils/download';
+import BaseModel from './BaseModel.vue';
 const files = ref([])
 const { clearToken, username } = useAuth()
+
+// file loading state
+const isLoadingFiles = ref(false)
+const errorMessage = ref('')
+
 // Modal State
 const fileSignatureData = ref(null)
 const isModalOpen = ref(false)
 const isLoadingInfo = ref(false)
 
+// state of the popup modal
+function toggleModal() {
+  isModalOpen.value = !isModalOpen.value
+}
+
 onMounted(async () => {
+  isLoadingFiles.value = true
   try {
     files.value = await listFiles()
   } catch (error) {
-    console.error("Home load failed:", error);
+    isLoadingFiles.value = false
+    errorMessage.value = error.message
+  } finally {
+    isLoadingFiles.value = false
   }
 
 })
@@ -168,9 +226,11 @@ async function getFileSignatureInfo(fileId) {
   isModalOpen.value = true
   try {
     fileSignatureData.value = await getSignatureInspection(fileId)
+    console.log(fileSignatureData.value)
   }
   catch (error) {
     console.log(error)
+    isLoadingInfo.value = false
     closeModal()
   } finally {
     isLoadingInfo.value = false
@@ -181,11 +241,23 @@ function closeModal() {
   isModalOpen.value = false
 }
 
-function downloadSignature(){
+function downloadSignature() {
   triggerDownload(
     fileSignatureData.value.signature,
-   `${fileSignatureData.value.filename}.sig`,
-   'text/plain'
+    `${fileSignatureData.value.filename}.sig`,
+    'text/plain'
   )
 }
+
+function downloadKey() {
+  triggerDownload(
+    fileSignatureData.value.public_key,
+    `public_key_${username.value}.pem`,
+    'application/x-pem-file'
+  )
+}
+
+const refreshPage = () => {
+  window.location.reload();
+};
 </script>

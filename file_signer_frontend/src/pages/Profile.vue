@@ -21,22 +21,38 @@
     <!-- THE PAGE WRAPPER -->
     <main class="max-w-5xl mx-auto px-4">
 
-      <!-- THE BENTO GRID -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
+      <!---------------------Error or waiting Box--------------------------->
+      <div v-if="!userData" class="w-1/3 h-min mx-auto bg-white rounded-2xl border border-gray-100 shadow-sm">
 
+        <!----------------- The Loading Spinner --------->
+        <div v-if="loading" key="loading" class="h-full flex flex-col items-center justify-center p-4">
+          <!-- Simple Tailwind Spinner -->
+          <div class="animate-spin rounded-full h-15 w-15 border-b-3 border-green-500 mb-6">
+          </div>
+          <p class="text-gray-500 animate-pulse font-medium">
+            Loading data...
+          </p>
+        </div>
+
+        <!-------------Error Message (Try again)----------->
+        <div v-else-if="userDataError" class="text-center p-4">
+          <div class="text-red-500 mb-6">
+            ⚠️
+          </div>
+          <p class="text-sm text-red-600 font-medium">
+            {{ userDataError }}
+          </p>
+          <button @click="refreshPage" class="mt-5 text-sm text-gray-500 underline hover:text-gray-800">
+            Try again
+          </button>
+        </div>
+      </div>
+
+      <!--------------- THE BENTO GRID (Data) ------------>
+      <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Box 1: Identity (1/3 of the width) -->
         <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 ">
-
-          <div v-if="userDataError" class="text-center p-4">
-            <div class="text-red-500 mb-2">⚠️</div>
-            <p class="text-sm text-red-600 font-medium">{{ userDataError }}</p>
-
-            <button @click="refreshPage" class="mt-4 text-sm text-gray-500 underline hover:text-gray-800">
-              Try again
-            </button>
-          </div>
-
           <div v-if="userData" class="flex flex-col items-center text-center">
             <!-- 1. The Avatar Circle -->
             <div
@@ -87,7 +103,7 @@
               </div>
 
               <!----------- The Active Badge --------->
-               <!-- 1. ACTIVE STATE -->
+              <!-- 1. ACTIVE STATE -->
               <span v-if="userData?.key_status"
                 class="inline-flex items-center px-3 py-1 bg-green-50 rounded-full text-xs font-bold text-green-700 border border-green-100 shadow-sm">
                 <span class="w-2 h-2 bg-green-700 rounded-full mr-1 animate-pulse">
@@ -133,11 +149,12 @@
               <div class="p-5  rounded-2xl border border-red-100 flex flex-col justify-between items-center gap-4">
 
                 <div class="w-full text-start">
-                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2"> Your Public key : </label>
+                  <label class="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2"> Your Public
+                    key : </label>
                 </div>
 
                 <div
-                  class="w-full flex justify-between items-center flex-col sm:flex-row gap-3 bg-amber-300 px-3  p-3 rounded-lg border border-gray-200 shadow-inner">
+                  class="w-full flex justify-between items-center flex-col sm:flex-row gap-3 px-3  p-3 rounded-lg border border-gray-200 shadow-inner">
 
                   <!-- Button 1: Download -->
                   <button @click="downloadKey"
@@ -283,8 +300,8 @@ async function rotateKey() {
   try {
     const response = await rotateUserKeys(password.value)
     result.value = response.message
-     // Re-fetch the fresh data 
-    if(result.value){
+    // Re-fetch the fresh data 
+    if (result.value) {
       await getData()
     }
   } catch (e) {
@@ -297,6 +314,7 @@ async function rotateKey() {
 }
 
 async function getData() {
+  loading.value = true
   try {
     const response = await getUserData()
     userData.value = response
@@ -304,6 +322,8 @@ async function getData() {
   } catch (e) {
     userDataError.value = e.message
     console.log(e.message)
+  } finally {
+    loading.value = false
   }
 }
 

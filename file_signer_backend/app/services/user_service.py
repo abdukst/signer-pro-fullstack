@@ -7,6 +7,7 @@ from app.models.user_keys_model import UserKey
 from app.security.password import hash_password
 from app.security.jwt import create_access_token
 from passlib.context import CryptContext
+from datetime import datetime, timezone
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated = "auto")
@@ -100,6 +101,7 @@ def rotate_user_key(db: Session, user: User, password: str):
     try:
         # Deactivate the key and save the changes
         active_user_key.is_active = False
+        active_user_key.revoked_at = datetime.now(timezone.utc)
         db.commit()
     except Exception as e:
         db.rollback()

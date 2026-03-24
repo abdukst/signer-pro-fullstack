@@ -194,5 +194,8 @@ def get_signature_info(db:Session,*, user_id: int, file_id: int):
     "signature" : format_signature_to_b64(fileRecord.signature),
     "key_fingerprint": fileRecord.key_fingerprint,
     "file_hash": fileRecord.file_hash,
-    "created_at": fileRecord.created_at
+    "created_at": fileRecord.created_at,
+    "key_status": fileRecord.signing_key.is_active,
+    "public_key": fileRecord.signing_key.public_key,
+    "revoked_at": fileRecord.signing_key.revoked_at
   }

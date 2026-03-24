@@ -35,10 +35,16 @@
           </div>
         </header>
         <!-----------------------Main------------------------------>
-        <main class="flex flex-col min-h-60  justify-center items-center border border-gray-200 rounded-b-lg px-2 py-4">
+        <main class="flex flex-col min-h-60  justify-center items-center border border-gray-200 px-2 py-4">
         <!-- The Slot: to put ANY HTML inside from the parent -->
           <slot></slot>
         </main>
+          <div class="px-6 py-2 text-right border border-gray-200 bg-gray-100 rounded-b-lg">
+          <button @click="$emit('closeModal')"
+            class="bg-white text-red-600 border border-red-200 px-4 py-1 rounded-lg text-sm font-medium hover:bg-red-100">
+            Close
+          </button>
+        </div>
       </div>
       </Transition>
     </div>

@@ -17,4 +17,7 @@ class FileAuditResponse(FileResponse):
   signer_identifier: str
   key_fingerprint: str
   signature: str
-  
+
+  key_status: bool | None = None
+  public_key: str | None = None
+  revoked_at: datetime | None = None
