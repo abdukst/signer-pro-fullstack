@@ -9,7 +9,7 @@ export async function signFile(file, password) {
     formData.append('uploaded_file', file)
     formData.append('password', password)
     const response = await apiClient.post(
-      '/files/sign',
+      '/files/signatures',
       formData,
       {
         responseType: 'blob'
@@ -44,7 +44,7 @@ export async function verifyFile(fileId, file) {
   const formData = new FormData()
   formData.append('uploaded_file', file)
   try {
-    const response = await apiClient.post(`/files/verify/${fileId}`, formData)
+    const response = await apiClient.post(`/files/${fileId}/verifications`, formData)
     return response.data
   } catch (error) {
     throw new Error(error.response?.data?.detail || "'File verification failed")
@@ -62,7 +62,7 @@ export async function listFiles() {
 
 export async function getSignatureInspection(fileId) {
   try {
-    const response = await apiClient.get(`/files/${fileId}/signature-inspection`)
+    const response = await apiClient.get(`/files/${fileId}/inspections`)
     return response.data
   } catch (error) {
     throw new Error(error.response?.data?.detail || 'Failed to fetch inspection details')
@@ -76,7 +76,7 @@ export async function verifySigIndependent(orginalFile, signatureFile, publicKey
     formData.append('uploaded_file', orginalFile)
     formData.append('signature_file', signatureFile)
     formData.append('public_key', publicKeyStr)
-    const response = await apiClient.post(`files/verify-independent`, formData)
+    const response = await apiClient.post(`/files/independent-verifications`, formData)
     return response.data
   } catch (error) {
     throw new Error(error.response?.data?.detail || 'Verification Failed, Try again')

@@ -9,15 +9,15 @@ from app.models.user_model import User
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
-
-@router.post("/register", response_model=UserResponse)
+# Create new users
+@router.post("", response_model=UserResponse)
 def register_user_endpoint(
     user: UserCreate,
     db: Session = Depends(get_db),
 ):
     return register_user(db, user)
 
-
+# Users data
 @router.get("/me", response_model=UserResponse)
 def read_current_user(
     db: Session = Depends(get_db),
@@ -30,21 +30,7 @@ def read_current_user(
     except Exception:
         raise HTTPException(status_code=500, detail="Could not load profile details")
 
-
-@router.get("/public-key")
-def get_public_key(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-                   ):
-    try:
-        return get_user_public_key(
-            db=db,
-            user_id = current_user.id
-            )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@router.post("/rotate-key")
+@router.post("/me/keys/rotations")
 def rotate_key(
     request: RotationRequest,
     db: Session = Depends(get_db),
@@ -59,6 +45,18 @@ def rotate_key(
     except Exception as e: #for unknown crashes
         raise HTTPException(status_code=500, detail="Internal server error during rotation.")
 
+@router.get("/me/public-key")
+def get_public_key(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+                   ):
+    try:
+        return get_user_public_key(
+            db=db,
+            user_id = current_user.id
+            )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 

@@ -2,7 +2,7 @@ import apiClient from "./client";
 
 export async function login(email, password) {
   try {
-    const response = await apiClient.post('/auth/login', {
+    const response = await apiClient.post('/auth/tokens', {
       email,
       password
     })
@@ -15,7 +15,7 @@ export async function login(email, password) {
 
 export async function register(userData) {
   try {
-    const response = await apiClient.post('/users/register', userData)
+    const response = await apiClient.post('/users', userData)
     return response.data
   } catch (error){
     throw  error
@@ -29,7 +29,7 @@ export async function register(userData) {
  */
 export async function rotateUserKeys(password) {
   try{
-    const response = await apiClient.post('/users/rotate-key', 
+    const response = await apiClient.post('/users/me/keys/rotations', 
       {password: password})
       return response.data
   } catch (error) {

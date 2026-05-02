@@ -15,7 +15,7 @@ router = APIRouter(prefix="/files",tags=["Files"])
 """
 uploaded_file: must match the The key (the string) in the file.js in the formData we send from the frontend
 """
-@router.post("/sign")
+@router.post("/signatures")
 def sign_uploaded_file(
   uploaded_file: UploadFile = File(...),
   password: str = Form(...),
@@ -49,7 +49,7 @@ def sign_uploaded_file(
     # This catches "Database Down" or "Disk Full"
     raise HTTPException(status_code=500, detail="A technical error occurred. Please try again later.")
 
-@router.post("/verify/{file_id}")
+@router.post("/{file_id}/verifications")
 def verify_uploaded_file(
   file_id: int,
   uploaded_file: UploadFile = File(...),
@@ -67,7 +67,7 @@ def verify_uploaded_file(
   except ValueError as e:
     raise HTTPException(status_code=404, detail=str(e))
 
-@router.post("/verify-independent")
+@router.post("/independent-verifications")
 def verify_uploaded_file_independent(
   uploaded_file: UploadFile = File(...),
   signature_file: UploadFile = File(...),
@@ -86,7 +86,7 @@ def verify_uploaded_file_independent(
     raise HTTPException(status_code=400, detail=str(e))
   return is_valid
 
-@router.get("/{file_id}/signature-inspection", response_model=FileAuditResponse)
+@router.get("/{file_id}/inspections", response_model=FileAuditResponse)
 def inspect_signature(
   file_id: int,
   db: Session = Depends(get_db),

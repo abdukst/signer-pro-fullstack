@@ -8,7 +8,7 @@ from app.security.jwt import create_access_token
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/tokens", response_model=TokenResponse)
 def login(data: LoginRequest, db: Session = Depends(get_db)):
 
   user = authenticate_user(db, data.email, data.password)
