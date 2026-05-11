@@ -10,6 +10,10 @@ import base64
 import hashlib
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 MAX_FILE_SIZE = 10 * 1024 * 1024 # 10 MB limit
 ALLOWED_EXTENSIONS = {".pdf", ".txt", ".png", ".jpg"}
 
@@ -20,7 +24,7 @@ def sign_file(db: Session,
               filename:str,
               file_obj
               ):
-  
+  logger.info(f"SIGNING INITIATED: User '{user.email}' for file '{filename}'")
   # 1. Validate upload file (raises ValueError if too big/
   validate_file(filename=filename, file_obj=file_obj)
   # hash file to sign it.
@@ -29,9 +33,9 @@ def sign_file(db: Session,
   # check if user has active key
   user_active_key = get_user_active_key(db=db, user_id= user.id)
   
-  # If it's the user's first time, generate the key or no active key.
+  # If it's the user's has no active Key, generate the key or no active key.
   if not user_active_key:
-    
+    logger.info(f"KEY GENERATION: User {user.email} is creating their security key.")
     user_active_key = initialize_user_keys(user_id=user.id, password=password)
     
     db.add(user_active_key)
@@ -40,7 +44,7 @@ def sign_file(db: Session,
     # its 'id' and 'key_fingerprint' before we link a file to it.
     # make db to be aware of changes without making them permanent until we finish the transaction.
     db.flush()
-  
+    logger.info(f"KEY GENERATION: Security key: {user_active_key.key_fingerprint} is created for User: {user.email}.")
   
   # 1. THE CORE ACTION: Sign the file hash
   # If the password is wrong, 'sign_data' raises a ValueError here.
@@ -53,16 +57,15 @@ def sign_file(db: Session,
       password=password,
       data=file_hash.encode()
       )
+    logger.info(f"Signature GENERATED: File '{filename}' signed with key {user_active_key.key_fingerprint}")
   except ValueError as e:
-
+    logger.warning(f"SIGNING DENIED: Invalid password attempt for user '{user.email}'")
     db.rollback()
-
     # This catches "Invalid Password" error from unlock_private_key
     raise e
   except Exception:
-
+    logger.error(f"SIGNING CRASH: Technical error in the signing service for user '{user.email}: {str(e)}", exc_info=True)
     db.rollback()
-
     # This catches any other unexpected technical crash
     raise ValueError("Technical error in the signing service")
   
@@ -89,6 +92,8 @@ def sign_file(db: Session,
   db.commit()
   db.refresh(file_record)
 
+  logger.info(f"SIGNING COMPLETE: FileRecord {file_record.id} saved for {filename}")
+
   return {
     "filename": filename,
     "file_hash": file_hash,
@@ -104,14 +109,19 @@ def verify_file(db: Session,
                 file_obj
                 ) -> bool:
 
+  logger.info(f"VERIFICATION REQUEST: File ID: {file_id} User ID: {user_id}")
+
+  user = db.query(User).filter(User.id==user_id).first()
+  if not user:
+    logger.warning(f"VERIFICATION FAILED: User with ID {user_id} not found in database.")
+    raise ValueError("Signer identity not found")
+
   file_record = db.query(FileRecord).filter(
     FileRecord.id==file_id,
     FileRecord.user_id==user_id
     ).first()
-  
-  
-  
   if not file_record:
+    logger.warning(f"VERIFICATION FAILED: File ID {file_id} not found in database.")
     raise ValueError("File not found")
  
   # claculate the incoming file hash
@@ -120,36 +130,45 @@ def verify_file(db: Session,
   # 1. check if the original hash without signature matchs the incoming file hash with out signature.
   # Integrity (Has the file changed?)
   if incoming_file_hash != file_record.file_hash:
+    logger.error(f"INTEGRITY ALERT: File '{file_record.filename}' with ID {file_id} has been MODIFIED!")
     raise ValueError("Integrity check failed: The file has been modified since it was signed.")
   
-  user = db.query(User).filter(User.id==user_id).first()
-  if not user:
-    raise ValueError("Signer identity not found")
+
   
   # get the the key that signed this file.
   file_signing_key = file_record.signing_key
   if not file_signing_key:
+    logger.error(f"VERIFICATION ERROR: Signing key for file {file_id} is missing from DB!")
     raise ValueError("Verification Error: The specific key used for this signature is missing from our records.")
 
   # Check 2: Authenticity (Was it really this user?)
   # This will now either return True or raise a ValueError
-  return verify_signature(
+
+  is_valid_signature = verify_signature(
     file_signing_key.public_key,
     incoming_file_hash.encode(),
     file_record.signature
   )
+
+  logger.info(f"VERIFICATION RESULT: File {file_id} is {'VALID' if is_valid_signature else 'INVALID'}")
+  return is_valid_signature
   
 def verify_file_offline(*, public_key:str, file_obj, signature_b64: str) -> bool:
+
+  logger.info(f"OFFLINE VERIFICATION REQUEST")
+
   # compute the hash for the incoming file
   file_hash = hash_file(file_obj=file_obj)
   try :
     signature = base64.b64decode(signature_b64)
   except Exception:
+    logger.error(f"OFFLINE VERIFICATION ERROR: invalid signature ecncoding")
     raise ValueError("invalid signature ecncoding")
   
   
   # decode the signature from the incomeing .sig file 
   is_valid = verify_signature(public_key_str=public_key, data=file_hash.encode(), signature = signature)
+  logger.info(f"OFFLINE VERIFICATION RESULT: {'VALID' if is_valid else 'INVALID'}")
   return is_valid
 
 

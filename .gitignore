@@ -12,6 +12,9 @@ file_signer_backend/.env
 file_signer_backend/*.db
 file_signer_backend/*.bin
 
+*.log
+app.log
+
 # --- Frontend (Node/Vue) ---
 # Ignore the dependencies folder
 file_signer_frontend/node_modules/
