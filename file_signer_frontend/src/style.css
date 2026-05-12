@@ -1,1 +1,33 @@
 @import "tailwindcss";
+
+
+
+
+
+/* 1.the "Slide Down" Animation */
+@keyframes slideDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 2. Apply "Slide Down" to the Enter-Active class */
+.global-toast-enter-active {
+  animation: slideDown 0.5s ease-out ;
+}
+
+/* 3. Handle the Exit */
+.global-toast-leave-active {
+  animation: slideDown 0.5s ease-in reverse ;
+  position: absolute; /* Keeps others from snapping while this leaves */
+}
+
+/* 4. Handle Stacking */
+.global-toast-move {
+  transition: transform 0.5s ease;
+}

@@ -17,10 +17,7 @@
       <form class="space-y-4" @submit.prevent="handleLogin">
 
         <div>
-          <div v-if="errorMessage"
-            class="bg-red-100 text-red-700 p-2 mb-4 rounded text-sm border border-red-200 text-center ">
-            {{ errorMessage }}
-          </div>
+
 
           <label class="block text-sm font-medium text-gray-700">
             Email
@@ -61,7 +58,9 @@ import { ref } from 'vue'
 import { login } from '../api/auth'
 import { useAuth } from '../auth/authStore'
 import { useRouter } from 'vue-router'
+import { useToast } from 'vue-toastification'
 
+const toast = useToast() 
 const email = ref('')
 const password = ref('')
 const { setToken, setUsername } = useAuth()
@@ -78,9 +77,11 @@ async function handleLogin() {
     const data = await login(email.value, password.value)
     setToken(data.access_token)
     setUsername(data.user.username)
+
+    toast.success(`Welcome back, ${data.user.username}!`);
     router.push('/home')
   } catch (error) {
-    console.log(error)
+    // client.js handles the toast for errors automatically!
     errorMessage.value = error.response?.data?.detail || "Something went wrong. Please try again."
   } finally {
     loading.value = false // Stop waiting
