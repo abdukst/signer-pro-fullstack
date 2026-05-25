@@ -1,7 +1,6 @@
 import pytest
 from unittest.mock import patch
 from app.schemas.user_schema import UserCreate
-from app.models.user_keys_model import UserKey
 from app.services.user_service import register_user, authenticate_user, get_user_active_key, get_user_public_key, rotate_user_key, get_user_profile
 from app.security.key_service import initialize_user_keys
 

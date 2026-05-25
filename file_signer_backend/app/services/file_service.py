@@ -63,7 +63,7 @@ def sign_file(db: Session,
     db.rollback()
     # This catches "Invalid Password" error from unlock_private_key
     raise e
-  except Exception:
+  except Exception as e:
     logger.error(f"SIGNING CRASH: Technical error in the signing service for user '{user.email}: {str(e)}", exc_info=True)
     db.rollback()
     # This catches any other unexpected technical crash
